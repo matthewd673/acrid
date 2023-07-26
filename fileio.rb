@@ -3,8 +3,12 @@ require "./screen"
 
 def load_file(filename)
   file = File.open(filename)
-  lines = file.readlines.map(&:chomp)
+  text = file.read
   file.close
 
-  return lines
+  return text
+end
+
+def load_file_lines(filename)
+  return load_file(filename).split("\n")
 end

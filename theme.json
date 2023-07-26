@@ -1,0 +1,7 @@
+{
+  "name": "mytheme",
+  "tokens": {
+    "number": "[0-9]+",
+    "text": "[a-zA-Z]+"
+  }
+}
