@@ -15,6 +15,8 @@ class SyntaxDefinition
   end
 end
 
+Token = Struct.new(:image, :type)
+
 def load_syntax_def(filename)
   data = JSON.parse(load_file(filename))
   return SyntaxDefinition.new(data["ext"], data["tokens"], data["keywords"])
@@ -27,9 +29,6 @@ def tokenize(str, syntax_def)
 
   offset = 0
   while offset < str.length
-
-    puts "offset: #{offset}"
-
     first_match = { type: "none", index: -1, text: "" }
 
     # find next matching token
@@ -49,28 +48,24 @@ def tokenize(str, syntax_def)
     }
 
     if first_match[:index] > 0
-      toks.push({ image: str[offset..first_match[:index]-1], type: "none" })
-      puts "<none>#{str[offset..first_match[:index]-1]}</none>"
+      toks.push(Token.new(str[offset..first_match[:index]-1], "none"))
     end
 
     if first_match[:index] != -1
-      toks.push({
-        image: first_match[:text],
-        type:
-          unless keyword_defs.include?(first_match[:text])
-            first_match[:type]
-          else
-            "keyword"
-          end
-      })
-      puts "<#{first_match[:type]}>#{first_match[:text]}</#{first_match[:type]}>"
+      toks.push(Token.new(
+        first_match[:text],
+        unless keyword_defs.include?(first_match[:text])
+          first_match[:type]
+        else
+          "keyword"
+        end
+      ))
       offset = first_match[:index] + first_match[:text].length
     end
 
     # if no match was found, consume rest of string as "none"
     if first_match[:type].eql?("none")
-      toks.push({ image: str[offset..], type: "none" })
-      puts "<none eol>#{str[offset..]}</none>"
+      toks.push(Token.new(str[offset..], "none" ))
       offset = str.length
     end
   end

@@ -26,7 +26,6 @@ end
 
 def restore_terminal
   # basic cleanup
-  getch
   close_screen
 end
 
