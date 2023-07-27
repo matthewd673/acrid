@@ -38,3 +38,15 @@ def write_str(str, color)
   attrset(color_pair(color))
   addstr(str)
 end
+
+def get_max_x
+  return cols
+end
+
+def get_max_y
+  return lines
+end
+
+def clear_to_eol
+  clrtoeol
+end

@@ -15,7 +15,7 @@ end
 prepare_terminal
 
 ed = Editor.new(filename)
-ed.print_file_lines
+ed.print
 
 input_loop
 
