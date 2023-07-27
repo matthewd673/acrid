@@ -15,6 +15,7 @@ module Acrid
     FINISH_PRINT        ||= 5
     FOCUS               ||= 6
     UNFOCUS             ||= 7
+    CURSOR_MOVE         ||= 8
   end
 
   def self.register_handler(event, listener)

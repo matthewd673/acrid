@@ -10,8 +10,8 @@ class Document
     @@syntax = syntax
     @@scroll_y = 0
 
-    raw_lines = load_file_lines(filename)
-    @@lines = raw_lines.map { |l|
+    @@raw_lines = load_file_lines(filename)
+    @@lines = @@raw_lines.map { |l|
       tokenize(l, @@syntax)
     }
 
@@ -25,6 +25,10 @@ class Document
     )
 
     Acrid.register_handler(Acrid::Event::GETCH, method(:handle_getch))
+    Acrid.register_handler(
+      Acrid::Event::CURSOR_MOVE,
+      method(:handle_cursor_move)
+    )
 
     Acrid.register_handler(Acrid::Event::FOCUS, method(:handle_focus))
     Acrid.register_handler(Acrid::Event::UNFOCUS, method(:handle_unfocus))
@@ -68,23 +72,89 @@ class Document
     if @focused then @@cursor.apply_physical_cursor end
   end
 
+  def max_line
+    @@lines.length - 1
+  end
+
+  def current_line
+    @@raw_lines[@@cursor.vy]
+  end
+
+  def handle_cursor_move(data)
+    if not @focused then return end
+
+    def lock_to_line_len
+      if @@cursor.vx > current_line.length
+        @@cursor.vx = current_line.length
+      end
+    end
+
+    def move_up
+      if @@cursor.vy > 0
+        @@cursor.vy -= 1
+        return true
+      else
+        return false
+      end
+    end
+
+    def move_down
+      if @@cursor.vy < max_line
+        @@cursor.vy += 1
+        return true
+      else
+        return false
+      end
+    end
+
+    def move_left
+      if @@cursor.vx > 0
+        @@cursor.vx -= 1
+        return true
+      elsif move_up
+        @@cursor.vx = current_line.length
+        return true
+      else
+        return false
+      end
+    end
+
+    def move_right
+      if @@cursor.vx < current_line.length
+        @@cursor.vx += 1
+        return true
+      elsif move_down
+        @@cursor.vx = 0
+        return true
+      else
+        return false
+      end
+    end
+
+    funcs = {
+      "up" => method(:move_up),
+      "down" => method(:move_down),
+      "left" => method(:move_left),
+      "right" => method(:move_right),
+    }
+
+    funcs[data["direction"]].call()
+    lock_to_line_len
+  end
+
   def handle_getch(data)
     if not @focused then return end
 
     case data["char"]
     # move through document with arrow keys
     when Curses::Key::UP
-      if @@cursor.vy > 0
-        @@cursor.vy -= 1
-      end
+      Acrid.trigger_event(Acrid::Event::CURSOR_MOVE, { "direction" => "up" })
     when Curses::Key::DOWN
-      @@cursor.vy += 1
+      Acrid.trigger_event(Acrid::Event::CURSOR_MOVE, { "direction" => "down" })
     when Curses::Key::LEFT
-      if @@cursor.vx > 0
-        @@cursor.vx -= 1
-      end
+      Acrid.trigger_event(Acrid::Event::CURSOR_MOVE, { "direction" => "left" })
     when Curses::Key::RIGHT
-      @@cursor.vx += 1
+      Acrid.trigger_event(Acrid::Event::CURSOR_MOVE, { "direction" => "right" })
     end
 
     # update physical cursor according to virtual
