@@ -1,3 +1,4 @@
+require "./acrid"
 require "./fileio"
 require "./themes"
 require "./syntax"
@@ -15,24 +16,31 @@ class Editor
     syntax = load_syntax_def("config/syntax/#{ext}.json")
 
     @@document = Document.new(filename, theme, syntax)
-    @@cursor = Cursor.new
-
     @@cli = Cli.new
 
-    register_input_listener(method(:handle_input))
+    @@document.focused = true
+    @@cli.focused = false
+
+    # register_input_listener(method(:handle_input))
+    Acrid.register_event_listener(Acrid::Event::GETCH, method(:handle_input))
   end
 
   def print
     @@document.print_lines(@@scroll_y)
-
     @@cli.print_cli
 
-    @@cursor.set_physical_cursor # reset cursor pos
+    @@document.post_print
+    @@cli.post_print
   end
 
-  def handle_input(c)
-    if c == 'p' then @@cli.toggle_focus end # TODO: temp
-    if c == 'q' then exit end # TODO: temp
+  def flip_focus
+    @@document.focused = @@cli.focused
+    @@cli.focused = !@@cli.focused
+  end
+
+  def handle_input(data)
+    if data["char"] == 'p' then flip_focus end # TODO: temp
+    if data["char"] == 'q' then exit end # TODO: temp
 
     # TODO: theres probably a better place for this
     print

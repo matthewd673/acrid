@@ -1,6 +1,9 @@
 require "./screen"
+require "./cursor"
 
 class Document
+  attr_accessor :focused
+
   def initialize(filename, theme, syntax)
     @@theme = theme
     @@syntax = syntax
@@ -9,6 +12,8 @@ class Document
     @@lines = raw_lines.map { |l|
       tokenize(l, @@syntax)
     }
+
+    @@cursor = Cursor.new
   end
 
   def print_lines(scroll_y)
@@ -34,6 +39,10 @@ class Document
       clear_to_eol
 
       y += 1
+    end
+
+    def post_print
+      if focused then @@cursor.apply_physical_cursor end
     end
 
     # clear bottom if doc lines don't fill screen
