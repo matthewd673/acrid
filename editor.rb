@@ -4,8 +4,9 @@ require "./syntax"
 
 class Editor
   def initialize(filename)
+    ext = filename.split(".")[-1]
     @theme = load_theme("config/theme.json")
-    @syntax_def = load_syntax_def("config/rb.json")
+    @syntax_def = load_syntax_def("config/syntax/#{ext}.json")
 
     raw_lines = load_file_lines(filename)
     @lines = raw_lines.map { |l|
