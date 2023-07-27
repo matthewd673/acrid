@@ -1,9 +1,6 @@
 #!/usr/bin/env ruby
 require "./screen"
 require "./editor"
-# require "./fileio"
-# require "./themes"
-# require "./tokenizer"
 
 prepare_terminal
 

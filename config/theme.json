@@ -1,0 +1,15 @@
+{
+  "name": "mytheme",
+  "colors": {
+    "url": "blue",
+    "function": "yellow",
+    "boolean": "blue",
+    "number": "magenta",
+    "hex": "magenta",
+    "string": "green",
+    "character": "green",
+    "comment": "cyan",
+    "operator": "yellow",
+    "keyword": "red"
+  }
+}
