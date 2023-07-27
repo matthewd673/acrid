@@ -8,8 +8,6 @@ require "./document"
 require "./cli"
 
 class Editor
-  @@scroll_y = 0
-
   def initialize(filename)
     ext = filename.split(".")[-1]
     theme = load_theme("config/theme.json")
@@ -21,7 +19,6 @@ class Editor
     @@document.focused = true
     @@cli.focused = false
 
-    # register_input_listener(method(:handle_input))
     Acrid.register_handler(Acrid::Event::PRINT, method(:handle_print))
     Acrid.register_handler(Acrid::Event::GETCH, method(:handle_input))
   end
@@ -30,7 +27,7 @@ class Editor
     if data["target"] != "editor" then return end
 
     Acrid.trigger_event(Acrid::Event::PRINT,
-      { "target" => "document", "scroll_y" => @@scroll_y }
+      { "target" => "document" }
     )
     Acrid.trigger_event(Acrid::Event::PRINT, { "target" => "cli" })
 
