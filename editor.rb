@@ -22,20 +22,29 @@ class Editor
     @@cli.focused = false
 
     # register_input_listener(method(:handle_input))
-    Acrid.register_event_listener(Acrid::Event::GETCH, method(:handle_input))
+    Acrid.register_handler(Acrid::Event::PRINT, method(:handle_print))
+    Acrid.register_handler(Acrid::Event::GETCH, method(:handle_input))
   end
 
-  def print
-    @@document.print_lines(@@scroll_y)
-    @@cli.print_cli
+  def handle_print(data)
+    if data["target"] != "editor" then return end
 
-    @@document.post_print
-    @@cli.post_print
+    Acrid.trigger_event(Acrid::Event::PRINT,
+      { "target" => "document", "scroll_y" => @@scroll_y }
+    )
+    Acrid.trigger_event(Acrid::Event::PRINT, { "target" => "cli" })
+
+    Acrid.trigger_event(Acrid::Event::FINISH_PRINT, {})
   end
 
   def flip_focus
-    @@document.focused = @@cli.focused
-    @@cli.focused = !@@cli.focused
+    if @@document.focused
+      Acrid.trigger_event(Acrid::Event::UNFOCUS, { "target" => "document" })
+      Acrid.trigger_event(Acrid::Event::FOCUS, { "target" => "cli" })
+    else
+      Acrid.trigger_event(Acrid::Event::UNFOCUS, { "target" => "cli" })
+      Acrid.trigger_event(Acrid::Event::FOCUS, { "target" => "document" })
+    end
   end
 
   def handle_input(data)
@@ -43,6 +52,6 @@ class Editor
     if data["char"] == 'q' then exit end # TODO: temp
 
     # TODO: theres probably a better place for this
-    print
+    Acrid.trigger_event(Acrid::Event::PRINT, { "target" => "editor" })
   end
 end

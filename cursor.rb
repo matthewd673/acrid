@@ -4,14 +4,19 @@ require "./input"
 
 class Cursor
   # virtual x & y
-  @@vx = 0
-  @@vy = 0
+  attr_accessor :vx, :vy
 
   # physical x & y
-  @@px = 0
-  @@py = 0
+  attr_accessor :px, :py
+
+  def initialize
+    @vx = 0
+    @vy = 0
+    @px = 0
+    @py = 0
+  end
 
   def apply_physical_cursor
-    Curses.setpos(@@py, @@px)
+    Curses.setpos(@py, @px)
   end
 end

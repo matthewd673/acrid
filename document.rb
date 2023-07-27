@@ -14,9 +14,22 @@ class Document
     }
 
     @@cursor = Cursor.new
+    @focused = true
+
+    Acrid.register_handler(Acrid::Event::PRINT, method(:handle_print))
+    Acrid.register_handler(
+      Acrid::Event::FINISH_PRINT,
+      method(:handle_finish_print)
+    )
+
+    Acrid.register_handler(Acrid::Event::FOCUS, method(:handle_focus))
+    Acrid.register_handler(Acrid::Event::UNFOCUS, method(:handle_unfocus))
   end
 
-  def print_lines(scroll_y)
+  def handle_print(data)
+    if data["target"] != "document" then return end
+
+    scroll_y = data["scroll_y"]
     max_x = get_max_x
     max_y = get_max_y
 
@@ -41,14 +54,22 @@ class Document
       y += 1
     end
 
-    def post_print
-      if focused then @@cursor.apply_physical_cursor end
-    end
-
     # clear bottom if doc lines don't fill screen
     for i in y..max_y
       move_cursor(0, i)
       clear_to_eol
     end
+  end
+
+  def handle_finish_print(data)
+    if @focused then @@cursor.apply_physical_cursor end
+  end
+
+  def handle_focus(data)
+    if data["target"] == "document" then @focused = true end
+  end
+
+  def handle_unfocus(data)
+    if data["target"] == "document" then @focused = false end
   end
 end
