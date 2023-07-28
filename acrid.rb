@@ -22,6 +22,7 @@ module Acrid
     EDIT_LINE           ||= 12
     REMOVE_LINE         ||= 13
     ADD_LINE            ||= 14
+    SUBMIT_COMMAND      ||= 15
   end
 
   def self.register_handler(event, listener)
@@ -38,7 +39,7 @@ module Acrid
     @@event_listeners[event].delete(listener)
   end
 
-  def self.trigger_event(event, data)
+  def self.send_event(event, data)
     if @@event_listeners[event] != nil
       @@event_listeners[event].each { |l|
         l.call(data)
@@ -63,15 +64,15 @@ if __FILE__ == $0
 
   # take over terminal and enter editor
   prepare_terminal
-  Acrid.trigger_event(Acrid::Event::PREPARE_TERMINAL, {})
+  Acrid.send_event(Acrid::Event::PREPARE_TERMINAL, {})
 
   ed = Editor.new(filename)
-  Acrid.trigger_event(Acrid::Event::PRINT, { "target" => "editor" })
+  Acrid.send_event(Acrid::Event::PRINT, { "target" => "editor" })
 
-  Acrid.trigger_event(Acrid::Event::BEGIN_INPUT_LOOP, {})
+  Acrid.send_event(Acrid::Event::BEGIN_INPUT_LOOP, {})
   input_loop
 
   # cleanup
   restore_terminal
-  Acrid.trigger_event(Acrid::Event::RESTORE_TERMINAL, {})
+  Acrid.send_event(Acrid::Event::RESTORE_TERMINAL, {})
 end

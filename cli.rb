@@ -14,6 +14,8 @@ class Cli
   def initialize
     @@cursor = Cursor.new
 
+    @@input = ""
+
     # load footer "formula" class
     footer_rb = load_file("config/footer.rb")
     eval(footer_rb)
@@ -25,6 +27,23 @@ class Cli
     Acrid.register_handler(
       Acrid::Event::FINISH_PRINT,
       method(:handle_finish_print)
+    )
+
+    Acrid.register_handler(
+      Acrid::Event::CURSOR_MOVE,
+      method(:handle_cursor_move)
+    )
+    Acrid.register_handler(
+      Acrid::Event::EDITOR_TYPE,
+      method(:handle_editor_type)
+    )
+    Acrid.register_handler(
+      Acrid::Event::EDITOR_BACKSPACE,
+      method(:handle_editor_backspace)
+    )
+    Acrid.register_handler(
+      Acrid::Event::EDITOR_RETURN,
+      method(:handle_editor_return)
     )
 
     Acrid.register_handler(Acrid::Event::FOCUS, method(:handle_focus))
@@ -40,27 +59,77 @@ class Cli
       write_str(@@footer.to_s[..get_max_x], 5) # TODO: don't hardcode colors
       clear_to_eol
     else
-      write_str("cli focused", 0)
+      write_str(@@input, 0)
       clear_to_eol
     end
   end
 
   def handle_finish_print(data)
-    if focused then @@cursor.apply_physical_cursor end
+    if @focused then @@cursor.apply_physical_cursor end
   end
 
-  def handle_getch(data)
-    case data["char"]
-      # move through document with arrow keys
-      # when Curses::Key::UP
-        # Acrid.trigger_event(Acrid::Event::CURSOR_MOVE, { "direction" => "up" })
-      # when Curses::Key::DOWN
-        # Acrid.trigger_event(Acrid::Event::CURSOR_MOVE, { "direction" => "down" })
-      when Curses::Key::LEFT
-        Acrid.trigger_event(Acrid::Event::CURSOR_MOVE, { "direction" => "left" })
-      when Curses::Key::RIGHT
-        Acrid.trigger_event(Acrid::Event::CURSOR_MOVE, { "direction" => "right" })
+  # update physical cursor according to the virtual
+  def move_physical_cursor
+    @@cursor.px = @@cursor.vx
+    @@cursor.py = get_max_y - 1 # always bottom line
+  end
+
+  def handle_cursor_move(data)
+    if not @focused then return end
+
+    def move_left
+      if @@cursor.vx > 0 then @@cursor.vx -= 1 end
+    end
+    def move_right
+      if @@cursor.vx < @@input.length then @@cursor.vx += 1 end
+    end
+
+    if data["direction"] == "left" then move_left
+    elsif data["direction"] == "right" then move_right
+    end
+
+    move_physical_cursor
+  end
+
+  def handle_editor_type(data)
+    if not @focused then return end
+
+    @@input.insert(@@cursor.vx, data["char"])
+
+    @@cursor.vx += 1
+    move_physical_cursor
+  end
+
+  def handle_editor_backspace(data)
+    if not @focused then return end
+
+    if @@cursor.vx == 0 then return end
+
+    first = (
+      if @@cursor.vx > 1
+        @@input[..@@cursor.vx - 2]
+      else
+        ""
       end
+    )
+    second = @@input[@@cursor.vx..]
+    @@input = first + second
+    @@cursor.vx -= 1
+
+    move_physical_cursor
+  end
+
+  def handle_editor_return(data)
+    if not @focused then return end
+
+    Acrid.send_event(
+      Acrid::Event::SUBMIT_COMMAND,
+      { "command" => @@input }
+    )
+
+    @@input = ""
+    @@cursor.vx = 0
+    move_physical_cursor
   end
 
   def handle_focus(data)
