@@ -49,6 +49,20 @@ class Cli
     if focused then @@cursor.apply_physical_cursor end
   end
 
+  def handle_getch(data)
+    case data["char"]
+      # move through document with arrow keys
+      # when Curses::Key::UP
+        # Acrid.trigger_event(Acrid::Event::CURSOR_MOVE, { "direction" => "up" })
+      # when Curses::Key::DOWN
+        # Acrid.trigger_event(Acrid::Event::CURSOR_MOVE, { "direction" => "down" })
+      when Curses::Key::LEFT
+        Acrid.trigger_event(Acrid::Event::CURSOR_MOVE, { "direction" => "left" })
+      when Curses::Key::RIGHT
+        Acrid.trigger_event(Acrid::Event::CURSOR_MOVE, { "direction" => "right" })
+      end
+  end
+
   def handle_focus(data)
     if data["target"] == "cli" then @focused = true end
   end

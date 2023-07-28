@@ -50,3 +50,7 @@ end
 def clear_to_eol
   clrtoeol
 end
+
+def bell
+  beep
+end

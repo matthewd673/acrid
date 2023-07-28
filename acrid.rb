@@ -16,6 +16,12 @@ module Acrid
     FOCUS               ||= 6
     UNFOCUS             ||= 7
     CURSOR_MOVE         ||= 8
+    EDITOR_TYPE         ||= 9
+    EDITOR_BACKSPACE    ||= 10
+    EDITOR_RETURN       ||= 11
+    EDIT_LINE           ||= 12
+    REMOVE_LINE         ||= 13
+    ADD_LINE            ||= 14
   end
 
   def self.register_handler(event, listener)

@@ -29,6 +29,11 @@ class Document
       Acrid::Event::CURSOR_MOVE,
       method(:handle_cursor_move)
     )
+    Acrid.register_handler(Acrid::Event::EDITOR_TYPE, method(:handle_editor_type))
+    Acrid.register_handler(Acrid::Event::EDITOR_BACKSPACE, method(:handle_editor_backspace))
+    Acrid.register_handler(Acrid::Event::EDITOR_RETURN, method(:handle_editor_return))
+
+    Acrid.register_handler(Acrid::Event::EDIT_LINE, method(:handle_edit_line))
 
     Acrid.register_handler(Acrid::Event::FOCUS, method(:handle_focus))
     Acrid.register_handler(Acrid::Event::UNFOCUS, method(:handle_unfocus))
@@ -78,6 +83,68 @@ class Document
 
   def current_line
     @@raw_lines[@@cursor.vy]
+  end
+
+  def handle_getch(data)
+    if not @focused then return end
+
+    # @@raw_lines[0] = data["char"].class.to_s
+    # @@lines[0] = tokenize(@@raw_lines[0], @@syntax)
+
+    key_events = {
+      Curses::Key::UP => {
+        :event => Acrid::Event::CURSOR_MOVE,
+        :data => { "direction" => "up" }
+      },
+      Curses::Key::DOWN => {
+        :event => Acrid::Event::CURSOR_MOVE,
+        :data => { "direction" => "down" }
+      },
+      Curses::Key::LEFT => {
+        :event => Acrid::Event::CURSOR_MOVE,
+        :data => { "direction" => "left" }
+      },
+      Curses::Key::RIGHT => {
+        :event => Acrid::Event::CURSOR_MOVE,
+        :data => { "direction" => "right" }
+      },
+      127 => { # macOS delete key
+        :event => Acrid::Event::EDITOR_BACKSPACE,
+        :data => {}
+      },
+      13 => { # macOS enter key
+        :event => Acrid::Event::EDITOR_RETURN,
+        :data => {}
+      }
+    }
+
+    # @@raw_lines[0] = data["char"].to_s
+    # @@lines[0] = tokenize(@@raw_lines[0], @@syntax)
+
+    # handle special keys
+    if data["char"].is_a?(Integer)
+      if key_events[data["char"]] != nil
+
+        event = key_events[data["char"]]
+        Acrid.trigger_event(event[:event], event[:data])
+      end
+    # handle typing
+    elsif data["char"].is_a?(String)
+      Acrid.trigger_event(Acrid::Event::EDITOR_TYPE, { "char" => data["char"] })
+    end
+
+    # update physical cursor according to virtual
+    @@cursor.px = @@cursor.vx
+    @@cursor.py = @@cursor.vy - @@scroll_y
+
+    # if physical cursor hit top line, scroll up
+    if @@cursor.py == 0 && @@scroll_y > 0
+      @@scroll_y -= 1
+    # if phyiscal cursor hit last line, scroll down
+    elsif @@cursor.py == get_max_y - 1
+      @@scroll_y += 1
+      @@cursor.py -= 1 # and move it off the cli area
+    end
   end
 
   def handle_cursor_move(data)
@@ -142,33 +209,72 @@ class Document
     lock_to_line_len
   end
 
-  def handle_getch(data)
-    if not @focused then return end
+  def handle_editor_type(data)
+    @@raw_lines[@@cursor.vy].insert(@@cursor.vx, data["char"])
+    @@cursor.vx += 1
+    Acrid.trigger_event(Acrid::Event::EDIT_LINE, { "line" => @@cursor.vy })
+  end
 
-    case data["char"]
-    # move through document with arrow keys
-    when Curses::Key::UP
-      Acrid.trigger_event(Acrid::Event::CURSOR_MOVE, { "direction" => "up" })
-    when Curses::Key::DOWN
-      Acrid.trigger_event(Acrid::Event::CURSOR_MOVE, { "direction" => "down" })
-    when Curses::Key::LEFT
-      Acrid.trigger_event(Acrid::Event::CURSOR_MOVE, { "direction" => "left" })
-    when Curses::Key::RIGHT
-      Acrid.trigger_event(Acrid::Event::CURSOR_MOVE, { "direction" => "right" })
+  def handle_editor_backspace(data)
+    # delete at line beginning, effectively joining the two
+    if @@cursor.vx == 0 && @@cursor.vy > 0
+      # append line text to end of above line
+      line_text = @@raw_lines[@@cursor.vy]
+      @@cursor.vy -= 1
+      @@cursor.vx = @@raw_lines[@@cursor.vy].length
+      @@raw_lines[@@cursor.vy] += line_text
+
+      Acrid.trigger_event(Acrid::Event::EDIT_LINE, { "line" => @@cursor.vy })
+
+      # remove old line
+      @@raw_lines.delete_at(@@cursor.vy + 1)
+      @@lines.delete_at(@@cursor.vy + 1)
+
+      Acrid.trigger_event(
+        Acrid::Event::REMOVE_LINE,
+        { "line" => @@cursor.vy + 1}
+      )
+    # delete character from line
+    elsif @@cursor.vx > 0
+      first = (
+        if @@cursor.vx > 1
+          @@raw_lines[@@cursor.vy][..@@cursor.vx - 2]
+        else
+          ""
+        end
+      )
+      second = @@raw_lines[@@cursor.vy][@@cursor.vx..]
+      @@raw_lines[@@cursor.vy] = first + second
+      @@cursor.vx -= 1
+      Acrid.trigger_event(Acrid::Event::EDIT_LINE, { "line" => @@cursor.vy })
     end
+  end
 
-    # update physical cursor according to virtual
-    @@cursor.px = @@cursor.vx
-    @@cursor.py = @@cursor.vy - @@scroll_y
+  def handle_editor_return(data)
+    first = (
+      if @@cursor.vx > 1
+        @@raw_lines[@@cursor.vy][..@@cursor.vx - 1]
+      else
+        ""
+      end
+    )
 
-    # if physical cursor hit top line, scroll up
-    if @@cursor.py == 0 && @@scroll_y > 0
-      @@scroll_y -= 1
-    # if phyiscal cursor hit last line, scroll down
-    elsif @@cursor.py == get_max_y - 1
-      @@scroll_y += 1
-      @@cursor.py -= 1 # and move it off the cli area
-    end
+    second = @@raw_lines[@@cursor.vy][@@cursor.vx..]
+
+    @@raw_lines[@@cursor.vy] = first
+    @@raw_lines.insert(@@cursor.vy + 1, second)
+    @@lines.insert(@@cursor.vy + 1, [])
+
+    Acrid.trigger_event(Acrid::Event::EDIT_LINE, { "line" => @@cursor.vy })
+    @@cursor.vy += 1
+    @@cursor.vx = 0
+    Acrid.trigger_event(Acrid::Event::ADD_LINE, { "line" => @@cursor.vy })
+    Acrid.trigger_event(Acrid::Event::EDIT_LINE, { "line" => @@cursor.vy })
+  end
+
+  def handle_edit_line(data)
+    l_num = data["line"]
+    @@lines[l_num] = tokenize(@@raw_lines[l_num], @@syntax)
   end
 
   def handle_focus(data)

@@ -45,8 +45,12 @@ class Editor
   end
 
   def handle_input(data)
-    if data["char"] == 'p' then flip_focus end # TODO: temp
-    if data["char"] == 'q' then exit end # TODO: temp
+    case data["char"]
+    when "p"
+      flip_focus
+    when "q"
+      exit
+    end
 
     # TODO: theres probably a better place for this
     Acrid.trigger_event(Acrid::Event::PRINT, { "target" => "editor" })
