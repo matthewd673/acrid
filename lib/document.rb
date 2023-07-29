@@ -95,12 +95,12 @@ class Document
 
     # print entire doc
     # print lines from file until screen is full
-    for i in @@scroll_y..(@@scroll_y + get_max_y)
+    for i in @@scroll_y..(@@scroll_y + get_max_y - 1)
       print_line(i)
     end
 
     # clear bottom if doc lines don't fill screen
-    for i in (@@lines.length - @@scroll_y)..get_max_y
+    for i in (@@lines.length - @@scroll_y)..(get_max_y - 2)
       move_cursor(0, i)
       clear_to_eol
     end
@@ -249,6 +249,9 @@ class Document
         Acrid::Event::REMOVE_LINE,
         { "line" => @@cursor.vy + 1}
       )
+
+      # must redraw entire document
+      Acrid.send_event(Acrid::Event::PRINT, { "target" => "document" })
     # delete character from line
     elsif @@cursor.vx > 0
       first = (
@@ -298,6 +301,9 @@ class Document
     # announce new line and its edited content (second section added)
     Acrid.send_event(Acrid::Event::ADD_LINE, { "line" => @@cursor.vy })
     Acrid.send_event(Acrid::Event::EDIT_LINE, { "line" => @@cursor.vy })
+
+    # must redraw entire document
+    Acrid.send_event(Acrid::Event::PRINT, { "target" => "document" })
 
     move_physical_cursor
     move_cursor(@@cursor.px, @@cursor.py)
