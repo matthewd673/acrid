@@ -8,10 +8,14 @@ require_relative "document"
 require_relative "cli"
 
 class Editor
+  attr_reader :filename
+  attr_reader :file_ext
+
   def initialize(filename)
-    ext = filename.split(".")[-1]
+    @filename = filename
+    @file_ext = filename.split(".")[-1]
     theme = load_theme("./config/theme.json")
-    syntax = load_syntax_def("./config/syntax/#{ext}.json")
+    syntax = load_syntax_def("./config/syntax/#{@file_ext}.json")
 
     @@document = Document.new(filename, theme, syntax)
     @@cli = Cli.new
@@ -25,6 +29,10 @@ class Editor
       Acrid::Event::TOGGLE_FOCUS,
       method(:handle_toggle_focus)
     )
+  end
+
+  def get_file_text
+    @@document.raw_lines.join("\n")
   end
 
   def handle_print(data)

@@ -10,6 +10,18 @@ module Acrid
     "pong"
   end
 
+  # basic "global store" responsibilities
+  @@editor = nil
+
+  def self.create_editor(filename)
+    @@editor = Editor.new(filename)
+  end
+
+  def self.editor
+    @@editor
+  end
+
+  # fancy stuff
   @@event_handlers = []
   @@command_handlers = []
   @@mods = []
@@ -99,7 +111,8 @@ if __FILE__ == $0
   Acrid.send_event(Acrid::Event::PREPARE_TERMINAL, {})
   prepare_terminal
 
-  editor = Editor.new(filename)
+  # editor = Editor.new(filename)
+  Acrid.create_editor(filename)
   Acrid.send_event(Acrid::Event::PRINT, { "target" => "editor" })
 
   Acrid.send_event(Acrid::Event::BEGIN_INPUT_LOOP, {})

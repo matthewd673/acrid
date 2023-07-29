@@ -1,5 +1,4 @@
 class Exec
-
   REGEXP = Regexp.new("^% (.*)")
 
   def initialize

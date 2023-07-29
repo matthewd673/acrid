@@ -52,6 +52,11 @@ class Document
     Acrid.register_handler(Acrid::Event::UNFOCUS, method(:handle_unfocus))
   end
 
+  # TODO: attr_reader
+  def raw_lines
+    @@raw_lines
+  end
+
   def print_line(i)
     if i < 0 || i >= @@lines.length then return end # out of doc range
 
