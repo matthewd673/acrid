@@ -3,9 +3,8 @@ require_relative "fileio"
 
 def prepare_inbuilt_commands
   # define a few basic default commands
-  Acrid.register_command(Regexp.new('^h|help$'), method(:command_help))
+  # Acrid.register_command(Regexp.new('^h|help$'), method(:command_help))
   Acrid.register_command(Regexp.new("^q|quit$"), method(:command_quit))
-  Acrid.register_command(Regexp.new("^w|write$", method(:command_save)))
 
   # trigger all commands when event is fired
   Acrid.register_handler(
@@ -19,13 +18,9 @@ def handle_submit_command(data)
   Acrid.send_command(data["command"])
 end
 
-def command_save(str)
-
-end
-
-def command_help(str)
-  # TODO
-end
+# def command_help(str)
+#   # TODO
+# end
 
 def command_quit(str)
   exit

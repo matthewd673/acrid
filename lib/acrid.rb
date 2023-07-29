@@ -3,10 +3,16 @@ require_relative "screen"
 require_relative "editor"
 require_relative "input"
 require_relative "commands"
+require_relative "mods"
 
 module Acrid
+  def self.ping
+    "pong"
+  end
+
   @@event_handlers = []
   @@command_handlers = []
+  @@mods = []
 
   module Event
     GETCH               ||= 0
@@ -67,13 +73,17 @@ module Acrid
       end
     }
   end
+
+  def self.register_mod(mod_class)
+    @@mods.push(mod_class)
+  end
 end
 
 # main
 if __FILE__ == $0
-
   # TODO: load config
-  # TODO: load mods
+  # load mods
+  load_all_mods
 
   # load commandline args
   filename = ARGV[0]
