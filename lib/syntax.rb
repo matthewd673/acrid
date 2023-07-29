@@ -1,5 +1,5 @@
 require "json"
-require "./fileio"
+require_relative "fileio"
 
 class SyntaxDefinition
   attr_accessor :ext
@@ -18,11 +18,20 @@ end
 Token = Struct.new(:image, :type)
 
 def load_syntax_def(filename)
-  data = JSON.parse(load_file(filename))
+  syntax_file = load_file(filename)
+
+  if syntax_file == nil then return nil end
+
+  data = JSON.parse(syntax_file)
   return SyntaxDefinition.new(data["ext"], data["tokens"], data["keywords"])
 end
 
 def tokenize(str, syntax_def)
+  # skip tokenizing if no syntax def
+  if syntax_def == nil
+    return [Token.new(str, "none")]
+  end
+
   token_defs = syntax_def.token_defs
   keyword_defs = syntax_def.keyword_defs
   toks = []

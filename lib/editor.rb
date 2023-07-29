@@ -1,17 +1,17 @@
-require "./acrid"
-require "./fileio"
-require "./themes"
-require "./syntax"
-require "./input"
-require "./cursor"
-require "./document"
-require "./cli"
+require_relative "acrid"
+require_relative "fileio"
+require_relative "themes"
+require_relative "syntax"
+require_relative "input"
+require_relative "cursor"
+require_relative "document"
+require_relative "cli"
 
 class Editor
   def initialize(filename)
     ext = filename.split(".")[-1]
-    theme = load_theme("config/theme.json")
-    syntax = load_syntax_def("config/syntax/#{ext}.json")
+    theme = load_theme("./config/theme.json")
+    syntax = load_syntax_def("./config/syntax/#{ext}.json")
 
     @@document = Document.new(filename, theme, syntax)
     @@cli = Cli.new

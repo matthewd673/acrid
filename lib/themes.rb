@@ -1,6 +1,6 @@
 require "curses"
 require "json"
-require "./fileio"
+require_relative "fileio"
 
 class Theme
 
@@ -23,6 +23,10 @@ class Theme
 end
 
 def load_theme(filename)
-  data = JSON.parse(load_file(filename))
+  theme_file = load_file(filename)
+
+  if theme_file == nil then return nil end
+
+  data = JSON.parse(theme_file)
   return Theme.new(data["name"], data["colors"])
 end

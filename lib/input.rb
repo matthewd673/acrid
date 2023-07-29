@@ -1,5 +1,5 @@
 require "curses"
-require "./acrid"
+require_relative "acrid"
 
 def input_loop
   while true

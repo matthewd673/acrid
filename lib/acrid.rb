@@ -1,7 +1,10 @@
 #!/usr/bin/env ruby
-require "./screen"
-require "./editor"
-require "./input"
+require_relative "screen"
+require_relative "editor"
+require_relative "input"
+
+# puts __FILE__
+# puts $LOAD_PATH
 
 module Acrid
   @@event_listeners = []

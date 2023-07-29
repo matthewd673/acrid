@@ -1,5 +1,5 @@
-require "./screen"
-require "./fileio"
+require_relative "screen"
+require_relative "fileio"
 
 # default footer
 class Footer

@@ -1,6 +1,6 @@
 require "curses"
-require "./screen"
-require "./cursor"
+require_relative "screen"
+require_relative "cursor"
 
 class Document
   attr_accessor :focused
@@ -63,7 +63,10 @@ class Document
 
       @@lines[i].each { |t|
         dist_to_edge = max_x - x
-        write_str(t.image[..dist_to_edge], @@theme.token_colors[t.type])
+
+        # pick color and/or handle nil theme
+        color = if @@theme == nil then 0 else @@theme.token_colors[t.type] end
+        write_str(t.image[..dist_to_edge], color)
 
         x += t.image.length
         if x >= max_x then break end

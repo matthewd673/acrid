@@ -1,6 +1,6 @@
 require "curses"
-require "./screen"
-require "./input"
+require_relative "screen"
+require_relative "input"
 
 class Cursor
   # virtual x & y
