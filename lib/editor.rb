@@ -26,6 +26,10 @@ class Editor
     Acrid.register_handler(Acrid::Event::PRINT, method(:handle_print))
     Acrid.register_handler(Acrid::Event::GETCH, method(:handle_getch))
     Acrid.register_handler(
+      Acrid::Event::SUBMIT_COMMAND,
+      method(:handle_submit_command)
+    )
+    Acrid.register_handler(
       Acrid::Event::TOGGLE_FOCUS,
       method(:handle_toggle_focus)
     )
@@ -42,6 +46,13 @@ class Editor
       { "target" => "document" }
     )
     Acrid.send_event(Acrid::Event::PRINT, { "target" => "cli" })
+  end
+
+  def handle_submit_command(data)
+    # force focus onto document
+    Acrid.send_event(Acrid::Event::UNFOCUS, { "target" => "cli" })
+    Acrid.send_event(Acrid::Event::FOCUS, { "target" => "document" })
+    Acrid.send_event(Acrid::Event::PRINT, { "target" => "editor" })
   end
 
   def handle_toggle_focus(data)

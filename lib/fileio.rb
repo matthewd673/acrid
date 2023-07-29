@@ -13,8 +13,22 @@ def load_file(filename)
   end
 end
 
-def load_file_lines(filename)
-  return load_file(filename).split("\n")
+def load_file_lines(filename, create = false)
+  file_text = load_file(filename)
+
+  if create && file_text == nil
+    file_text = "" # default value: empty
+    file = File.open(filename, "w+")
+    file.write(file_text)
+    file.close
+
+    File.write("log.txt", "wowa", mode: "a")
+
+  end
+
+  lines = file_text.split("\n")
+  if lines.length == 0 then lines.push("") end
+  return lines
 end
 
 def save_file(filename, text)

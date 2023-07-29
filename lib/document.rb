@@ -10,7 +10,7 @@ class Document
     @@syntax = syntax
     @@scroll_y = 0
 
-    @@raw_lines = load_file_lines(filename)
+    @@raw_lines = load_file_lines(filename, create: true)
     @@lines = @@raw_lines.map { |l|
       tokenize(l, @@syntax)
     }
