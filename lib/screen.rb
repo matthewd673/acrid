@@ -9,6 +9,7 @@ def prepare_terminal
   use_default_colors
   nonl
   noecho
+  cbreak
   stdscr.keypad(true)
 
   # TODO: formalize no color support

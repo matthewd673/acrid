@@ -174,11 +174,21 @@ class Document
       end
     end
 
+    def move_home
+      @@cursor.vx = 0
+    end
+
+    def move_end
+      @@cursor.vx = current_line.length
+    end
+
     funcs = {
       "up" => method(:move_up),
       "down" => method(:move_down),
       "left" => method(:move_left),
       "right" => method(:move_right),
+      "home" => method(:move_home),
+      "end" => method(:move_end),
     }
 
     funcs[data["direction"]].call()

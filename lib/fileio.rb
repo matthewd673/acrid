@@ -16,3 +16,9 @@ end
 def load_file_lines(filename)
   return load_file(filename).split("\n")
 end
+
+def save_file(filename, text)
+  file = File.open(filename, "w+")
+  file.write(text)
+  file.close
+end

@@ -48,59 +48,58 @@ class Editor
     Acrid.send_event(Acrid::Event::PRINT, { "target" => "editor" })
   end
 
-  def handle_getch(data)
-    # TODO: make const
-    key_events = {
-      Curses::Key::UP => {
-        :event => Acrid::Event::CURSOR_MOVE,
-        :data => { "direction" => "up" }
-      },
-      Curses::Key::DOWN => {
-        :event => Acrid::Event::CURSOR_MOVE,
-        :data => { "direction" => "down" }
-      },
-      Curses::Key::LEFT => {
-        :event => Acrid::Event::CURSOR_MOVE,
-        :data => { "direction" => "left" }
-      },
-      Curses::Key::RIGHT => {
-        :event => Acrid::Event::CURSOR_MOVE,
-        :data => { "direction" => "right" }
-      },
-      127 => { # macOS delete key
-        :event => Acrid::Event::EDITOR_BACKSPACE,
-        :data => {}
-      },
-      13 => { # macOS enter key
-        :event => Acrid::Event::EDITOR_RETURN,
-        :data => {}
-      },
-      27 => { # 27 is escape but also alt I think? TODO: figure this out
-        :event => Acrid::Event::TOGGLE_FOCUS,
-        :data => {}
-      }
+  KEY_EVENTS = {
+    Curses::Key::UP => {
+      :event => Acrid::Event::CURSOR_MOVE,
+      :data => { "direction" => "up" }
+    },
+    Curses::Key::DOWN => {
+      :event => Acrid::Event::CURSOR_MOVE,
+      :data => { "direction" => "down" }
+    },
+    Curses::Key::LEFT => {
+      :event => Acrid::Event::CURSOR_MOVE,
+      :data => { "direction" => "left" }
+    },
+    Curses::Key::RIGHT => {
+      :event => Acrid::Event::CURSOR_MOVE,
+      :data => { "direction" => "right" }
+    },
+    127 => { # macOS delete key
+      :event => Acrid::Event::EDITOR_BACKSPACE,
+      :data => {}
+    },
+    13 => { # macOS enter key
+      :event => Acrid::Event::EDITOR_RETURN,
+      :data => {}
+    },
+    27 => { # 27 is escape but also alt I think? TODO: figure this out
+      :event => Acrid::Event::TOGGLE_FOCUS,
+      :data => {}
+    },
+    Curses::Key::HOME => { # TODO: broken
+      :event => Acrid::Event::CURSOR_MOVE,
+      :data => { "direction" => "home" }
+    },
+    Curses::Key::END => { # TODO: broken
+      :event => Acrid::Event::CURSOR_MOVE,
+      :data => { "direction" => "end" }
     }
+  }
+
+  def handle_getch(data)
+
+    # File.write("log.txt", data["char"].to_s + "\n", mode: "a")
 
     # handle special keys
     if data["char"].is_a?(Integer)
-      if key_events[data["char"]] != nil
-
-        event = key_events[data["char"]]
+      if KEY_EVENTS[data["char"]] != nil
+        event = KEY_EVENTS[data["char"]]
         Acrid.send_event(event[:event], event[:data])
       end
     # handle typing
     elsif data["char"].is_a?(String)
       Acrid.send_event(Acrid::Event::EDITOR_TYPE, { "char" => data["char"] })
     end
-
-    # TODO: obviously temporary and awful
-    case data["char"]
-    # when "p"
-    #   flip_focus
-    when "q"
-      exit
-    end
-
-    # Acrid.send_event(Acrid::Event::PRINT, { "target" => "editor" })
   end
 end

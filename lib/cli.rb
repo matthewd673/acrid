@@ -138,6 +138,7 @@ class Cli
       { "command" => @@input }
     )
 
+    # reset input to default
     @@input = ""
     @@cursor.vx = 0
     move_physical_cursor

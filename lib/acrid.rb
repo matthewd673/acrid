@@ -2,12 +2,11 @@
 require_relative "screen"
 require_relative "editor"
 require_relative "input"
-
-# puts __FILE__
-# puts $LOAD_PATH
+require_relative "commands"
 
 module Acrid
-  @@event_listeners = []
+  @@event_handlers = []
+  @@command_handlers = []
 
   module Event
     GETCH               ||= 0
@@ -30,26 +29,43 @@ module Acrid
     DOCUMENT_SCROLL     ||= 17
   end
 
-  def self.register_handler(event, listener)
-    if @@event_listeners[event] == nil
-      @@event_listeners[event] = [ listener ]
+  def self.register_handler(event, handler)
+    if @@event_handlers[event] == nil
+      @@event_handlers[event] = [handler]
     else
-      @@event_listeners[event].push(listener)
+      @@event_handlers[event].push(handler)
     end
   end
 
-  def self.deregister_handler(event, listener)
-    if @@event_listeners[event] == nil then return end
+  def self.deregister_handler(event, handler)
+    if @@event_handlers[event] == nil then return end
 
-    @@event_listeners[event].delete(listener)
+    @@event_handlers[event].delete(handler)
   end
 
   def self.send_event(event, data)
-    if @@event_listeners[event] != nil
-      @@event_listeners[event].each { |l|
+    if @@event_handlers[event] != nil
+      @@event_handlers[event].each { |l|
         l.call(data)
       }
     end
+  end
+
+  def self.register_command(regexp, handler)
+    @@command_handlers.push({
+      :regexp => regexp,
+      :handler => handler
+    })
+  end
+
+  # TODO: deregister command (should this even be an option?)
+
+  def self.send_command(str)
+    @@command_handlers.each { |h|
+      if str.match(h[:regexp])
+        h[:handler].call(str)
+      end
+    }
   end
 end
 
@@ -67,9 +83,11 @@ if __FILE__ == $0
     exit
   end
 
+  prepare_inbuilt_commands
+
   # take over terminal and enter editor
-  prepare_terminal
   Acrid.send_event(Acrid::Event::PREPARE_TERMINAL, {})
+  prepare_terminal
 
   editor = Editor.new(filename)
   Acrid.send_event(Acrid::Event::PRINT, { "target" => "editor" })
@@ -78,6 +96,6 @@ if __FILE__ == $0
   input_loop
 
   # cleanup
-  restore_terminal
   Acrid.send_event(Acrid::Event::RESTORE_TERMINAL, {})
+  restore_terminal
 end
