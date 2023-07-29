@@ -62,10 +62,14 @@ class Cli
       write_str(@@input, 0)
       clear_to_eol
     end
+
+    Acrid.send_event(Acrid::Event::FINISH_PRINT, {})
   end
 
   def handle_finish_print(data)
-    if @focused then @@cursor.apply_physical_cursor end
+    if not @focused then return end
+
+    move_cursor(@@cursor.px, @@cursor.py)
   end
 
   # update physical cursor according to the virtual
@@ -89,6 +93,7 @@ class Cli
     end
 
     move_physical_cursor
+    move_cursor(@@cursor.px, @@cursor.py)
   end
 
   def handle_editor_type(data)
@@ -98,6 +103,9 @@ class Cli
 
     @@cursor.vx += 1
     move_physical_cursor
+
+    # tell self to print updated state
+    Acrid.send_event(Acrid::Event::PRINT, { "target" => "cli" })
   end
 
   def handle_editor_backspace(data)
@@ -117,6 +125,9 @@ class Cli
     @@cursor.vx -= 1
 
     move_physical_cursor
+
+    # tell self to print updated state
+    Acrid.send_event(Acrid::Event::PRINT, { "target" => "cli" })
   end
 
   def handle_editor_return(data)
@@ -130,6 +141,9 @@ class Cli
     @@input = ""
     @@cursor.vx = 0
     move_physical_cursor
+
+    # tell self to print updated state
+    Acrid.send_event(Acrid::Event::PRINT, { "target" => "cli" })
   end
 
   def handle_focus(data)

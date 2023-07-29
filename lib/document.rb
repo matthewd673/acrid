@@ -43,49 +43,70 @@ class Document
 
     Acrid.register_handler(Acrid::Event::EDIT_LINE, method(:handle_edit_line))
 
+    Acrid.register_handler(
+      Acrid::Event::DOCUMENT_SCROLL,
+      method(:handle_document_scroll)
+    )
+
     Acrid.register_handler(Acrid::Event::FOCUS, method(:handle_focus))
     Acrid.register_handler(Acrid::Event::UNFOCUS, method(:handle_unfocus))
   end
 
+  def print_line(i)
+    if i < 0 || i >= @@lines.length then return end # out of doc range
+
+    y = i - @@scroll_y
+    if y >= get_max_y - 1 || y < 0 then return end # out of screen range
+
+    # move cursor into position
+    x = 0
+    move_cursor(x, y)
+
+    # print each token in line
+    @@lines[i].each { |t|
+      dist_to_edge = get_max_x - x - 1
+
+      # pick color and handle nil theme
+      color = if @@theme == nil then 0 else @@theme.token_colors[t.type] end
+      write_str(t.image[..dist_to_edge], color)
+
+      # increment x, stop if reached end
+      x += t.image.length
+      if x >= get_max_x then break end
+    }
+
+    clear_to_eol
+  end
+
   def handle_print(data)
-    if data["target"] != "document" then return end
+    # if target is line, print only that line
+    if data["target"] == "line"
+      print_line(data["line"])
+      Acrid.send_event(Acrid::Event::FINISH_PRINT, {})
+    # target is something else, ignore event
+    elsif data["target"] != "document"
+      return
+    end
 
-    max_x = get_max_x
-    max_y = get_max_y
-
+    # print entire doc
     # print lines from file until screen is full
-    y = 0
-    for i in @@scroll_y..(@@scroll_y + max_y)
-      if i >= @@lines.length then break end
-
-      x = 0
-      move_cursor(x, y)
-
-      @@lines[i].each { |t|
-        dist_to_edge = max_x - x
-
-        # pick color and/or handle nil theme
-        color = if @@theme == nil then 0 else @@theme.token_colors[t.type] end
-        write_str(t.image[..dist_to_edge], color)
-
-        x += t.image.length
-        if x >= max_x then break end
-      }
-
-      clear_to_eol
-
-      y += 1
+    for i in @@scroll_y..(@@scroll_y + get_max_y)
+      print_line(i)
     end
 
     # clear bottom if doc lines don't fill screen
-    for i in y..max_y
+    for i in (@@lines.length - @@scroll_y)..get_max_y
       move_cursor(0, i)
       clear_to_eol
     end
+
+    Acrid.send_event(Acrid::Event::FINISH_PRINT, {})
   end
 
   def handle_finish_print(data)
-    if @focused then @@cursor.apply_physical_cursor end
+    if not @focused then return end
+
+    move_cursor(@@cursor.px, @@cursor.py)
   end
 
   def max_line
@@ -167,13 +188,18 @@ class Document
     # if physical cursor hit top line, scroll up
     if @@cursor.py == 0 && @@scroll_y > 0
       @@scroll_y -= 1
+      Acrid.send_event(Acrid::Event::DOCUMENT_SCROLL, {})
       # if phyiscal cursor hit last line, scroll down
     elsif @@cursor.py == get_max_y - 1
       @@scroll_y += 1
       @@cursor.py -= 1 # and move it off the cli area
+      Acrid.send_event(Acrid::Event::DOCUMENT_SCROLL, {})
     end
 
     lock_to_line_len
+    move_physical_cursor
+
+    move_cursor(@@cursor.px, @@cursor.py)
   end
 
   def handle_editor_type(data)
@@ -184,6 +210,7 @@ class Document
     Acrid.send_event(Acrid::Event::EDIT_LINE, { "line" => @@cursor.vy })
 
     move_physical_cursor
+    move_cursor(@@cursor.px, @@cursor.py)
   end
 
   def handle_editor_backspace(data)
@@ -223,6 +250,7 @@ class Document
     end
 
     move_physical_cursor
+    move_cursor(@@cursor.px, @@cursor.py)
   end
 
   def handle_editor_return(data)
@@ -257,6 +285,7 @@ class Document
     Acrid.send_event(Acrid::Event::EDIT_LINE, { "line" => @@cursor.vy })
 
     move_physical_cursor
+    move_cursor(@@cursor.px, @@cursor.py)
   end
 
   def handle_edit_line(data)
@@ -265,6 +294,17 @@ class Document
     # retokenize edited lines
     l_num = data["line"]
     @@lines[l_num] = tokenize(@@raw_lines[l_num], @@syntax)
+
+    # reprint line
+    Acrid.send_event(
+      Acrid::Event::PRINT,
+      { "target" => "line", "line" => l_num}
+    )
+  end
+
+  def handle_document_scroll(data)
+    Acrid.send_event(Acrid::Event::PRINT, { "target" => "document" })
+    Acrid.send_event(Acrid::Event::PRINT, { "target" => "cli" })
   end
 
   def handle_focus(data)

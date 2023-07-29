@@ -26,6 +26,8 @@ module Acrid
     REMOVE_LINE         ||= 13
     ADD_LINE            ||= 14
     SUBMIT_COMMAND      ||= 15
+    TOGGLE_FOCUS        ||= 16
+    DOCUMENT_SCROLL     ||= 17
   end
 
   def self.register_handler(event, listener)
@@ -69,7 +71,7 @@ if __FILE__ == $0
   prepare_terminal
   Acrid.send_event(Acrid::Event::PREPARE_TERMINAL, {})
 
-  ed = Editor.new(filename)
+  editor = Editor.new(filename)
   Acrid.send_event(Acrid::Event::PRINT, { "target" => "editor" })
 
   Acrid.send_event(Acrid::Event::BEGIN_INPUT_LOOP, {})

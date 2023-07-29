@@ -21,6 +21,10 @@ class Editor
 
     Acrid.register_handler(Acrid::Event::PRINT, method(:handle_print))
     Acrid.register_handler(Acrid::Event::GETCH, method(:handle_getch))
+    Acrid.register_handler(
+      Acrid::Event::TOGGLE_FOCUS,
+      method(:handle_toggle_focus)
+    )
   end
 
   def handle_print(data)
@@ -30,11 +34,9 @@ class Editor
       { "target" => "document" }
     )
     Acrid.send_event(Acrid::Event::PRINT, { "target" => "cli" })
-
-    Acrid.send_event(Acrid::Event::FINISH_PRINT, {})
   end
 
-  def flip_focus
+  def handle_toggle_focus(data)
     if @@document.focused
       Acrid.send_event(Acrid::Event::UNFOCUS, { "target" => "document" })
       Acrid.send_event(Acrid::Event::FOCUS, { "target" => "cli" })
@@ -42,10 +44,12 @@ class Editor
       Acrid.send_event(Acrid::Event::UNFOCUS, { "target" => "cli" })
       Acrid.send_event(Acrid::Event::FOCUS, { "target" => "document" })
     end
+
+    Acrid.send_event(Acrid::Event::PRINT, { "target" => "editor" })
   end
 
   def handle_getch(data)
-
+    # TODO: make const
     key_events = {
       Curses::Key::UP => {
         :event => Acrid::Event::CURSOR_MOVE,
@@ -70,6 +74,10 @@ class Editor
       13 => { # macOS enter key
         :event => Acrid::Event::EDITOR_RETURN,
         :data => {}
+      },
+      27 => { # 27 is escape but also alt I think? TODO: figure this out
+        :event => Acrid::Event::TOGGLE_FOCUS,
+        :data => {}
       }
     }
 
@@ -85,14 +93,14 @@ class Editor
       Acrid.send_event(Acrid::Event::EDITOR_TYPE, { "char" => data["char"] })
     end
 
+    # TODO: obviously temporary and awful
     case data["char"]
-    when "p"
-      flip_focus
+    # when "p"
+    #   flip_focus
     when "q"
       exit
     end
 
-    # TODO: theres probably a better place for this
-    Acrid.send_event(Acrid::Event::PRINT, { "target" => "editor" })
+    # Acrid.send_event(Acrid::Event::PRINT, { "target" => "editor" })
   end
 end
